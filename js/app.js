@@ -17,6 +17,19 @@ document.addEventListener('DOMContentLoaded', () => {
     githubToken: localStorage.getItem('git_po_token') || ''
   };
 
+  // Helper: Detect if string is intentional CLI synopsis or technical token
+  function isCliOrToken(str) {
+    if (!str) return false;
+    const s = str.trim();
+    if (s.startsWith('git ') || s.startsWith('git-')) return true;
+    if (/^<[^>]+>$/.test(s)) return true;
+    if (/^[a-z0-9_\-|]+$/i.test(s) && s.length < 15) return true;
+    if (/^%[a-z0-9%:.*_\-]+$/i.test(s)) return true;
+    if (/^\([a-z0-9_\-|\s()]+\)$/i.test(s) && s.length < 25) return true;
+    if (/^[a-z0-9_\-]+(\/[a-z0-9_\-]+)+$/i.test(s)) return true; // e.g. path/tree-ish
+    return false;
+  }
+
   // DOM Elements
   const els = {
     loadingState: document.getElementById('loading-state'),
@@ -75,14 +88,31 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Index entries with ID and status
       state.entries = state.poData.entries.map((entry, idx) => {
-        const isUntranslated = !entry.msgstr[0] || entry.msgstr[0].trim() === '' || (entry.msgid === entry.msgstr[0] && entry.msgid.length > 5);
+        const msgstr0 = entry.msgstr[0] || '';
+        const isEmpty = !msgstr0 || msgstr0.trim() === '';
+        const isIdentical = entry.msgid === msgstr0 && entry.msgid.length > 0;
+        const isCliToken = isCliOrToken(entry.msgid);
         const isFuzzy = entry.flags && entry.flags.includes('fuzzy');
+
+        let statusType = 'translated';
+        if (isFuzzy) {
+          statusType = 'fuzzy';
+        } else if (isEmpty) {
+          statusType = 'untranslated_empty';
+        } else if (isIdentical && !isCliToken) {
+          statusType = 'untranslated_english';
+        } else if (isCliToken && isIdentical) {
+          statusType = 'cli_syntax';
+        }
+
+        const isPending = statusType === 'untranslated_empty' || statusType === 'untranslated_english' || statusType === 'fuzzy';
+
         return {
           ...entry,
           _idx: idx,
-          _isUntranslated: isUntranslated,
-          _isFuzzy: isFuzzy,
-          _isTranslated: !isUntranslated && !isFuzzy
+          _statusType: statusType,
+          _isPending: isPending,
+          _isTranslated: !isPending
         };
       });
 
@@ -110,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateStats() {
     const total = state.entries.length;
     const translated = state.entries.filter(e => e._isTranslated).length;
-    const pending = state.entries.filter(e => e._isUntranslated || e._isFuzzy).length;
+    const pending = state.entries.filter(e => e._isPending).length;
     const percent = total > 0 ? ((translated / total) * 100).toFixed(1) : 0;
 
     els.statsTotal.textContent = total.toLocaleString('pt-BR');
@@ -125,8 +155,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     state.filteredEntries = state.entries.filter(entry => {
       // Filter status
-      if (state.currentFilter === 'untranslated' && !entry._isUntranslated) return false;
-      if (state.currentFilter === 'fuzzy' && !entry._isFuzzy) return false;
+      if (state.currentFilter === 'untranslated' && !entry._isPending) return false;
+      if (state.currentFilter === 'fuzzy' && entry._statusType !== 'fuzzy') return false;
       if (state.currentFilter === 'translated' && !entry._isTranslated) return false;
 
       // Search query
@@ -181,10 +211,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderEntryCard(entry) {
     let statusBadge = '';
-    if (entry._isFuzzy) {
+    if (entry._statusType === 'fuzzy') {
       statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-yellow-900/60 text-yellow-300 border border-yellow-700/50">🔄 Fuzzy (Incerteza)</span>';
-    } else if (entry._isUntranslated) {
-      statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-900/60 text-red-300 border border-red-700/50">⚠️ Não Traduzido</span>';
+    } else if (entry._statusType === 'untranslated_empty') {
+      statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-900/60 text-red-300 border border-red-700/50">⚠️ Não Traduzido (Vazio)</span>';
+    } else if (entry._statusType === 'untranslated_english') {
+      statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-900/60 text-amber-300 border border-amber-700/50">⚠️ Texto em Inglês</span>';
+    } else if (entry._statusType === 'cli_syntax') {
+      statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-900/60 text-blue-300 border border-blue-700/50">⚙️ Sintaxe / Comando CLI</span>';
     } else {
       statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-700/50">✅ Traduzido</span>';
     }
@@ -413,8 +447,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Update state
       entry.msgstr = proposedMsgstr;
-      entry._isUntranslated = false;
-      entry._isFuzzy = false;
+      entry._statusType = 'translated';
+      entry._isPending = false;
       entry._isTranslated = true;
       updateStats();
       renderList();
