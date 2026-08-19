@@ -9,10 +9,8 @@ window.APP_CONFIG = {
   PO_FILE_PATH: 'po/pt_BR.po',
 
   // GitHub OAuth App Client ID
-  // Substitua pelo seu Client ID gerado em: https://github.com/settings/developers
-  GITHUB_CLIENT_ID: 'Ov23liXXXXXXXXXXXXXX',
+  GITHUB_CLIENT_ID: 'Ov23limikcxrQ6KRXDVV',
 
   // OAuth Gatekeeper URL (Proxy serverless para troca do client_secret com segurança)
-  // Pode ser uma função no Cloudflare Workers, Vercel ou Coolify
   OAUTH_GATEKEEPER_URL: 'https://git-po-auth.daniel-pereira.workers.dev'
 };
