@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     statsTotal: document.getElementById('stats-total'),
     statsLines: document.getElementById('stats-lines'),
     searchInput: document.getElementById('search-input'),
+    selectJumpPage: document.getElementById('select-jump-page'),
     inputJumpMessage: document.getElementById('input-jump-message'),
     btnJumpMessage: document.getElementById('btn-jump-message'),
     inputJumpPage: document.getElementById('input-jump-page'),
@@ -131,11 +132,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     state.currentPage = 1;
+    updatePageDropdown();
     renderList();
+  }
+
+  function updatePageDropdown() {
+    const totalPages = Math.max(1, Math.ceil(state.filteredEntries.length / state.pageSize));
+    if (els.selectJumpPage) {
+      let options = '';
+      for (let p = 1; p <= totalPages; p++) {
+        options += `<option value="${p}" ${p === state.currentPage ? 'selected' : ''}>Página ${p} de ${totalPages}</option>`;
+      }
+      els.selectJumpPage.innerHTML = options;
+      els.selectJumpPage.value = String(state.currentPage);
+    }
+    if (els.inputJumpPage) {
+      els.inputJumpPage.max = totalPages;
+    }
   }
 
   function renderList() {
     const total = state.filteredEntries.length;
+    const totalPages = Math.max(1, Math.ceil(total / state.pageSize));
     const start = (state.currentPage - 1) * state.pageSize;
     const end = Math.min(start + state.pageSize, total);
     const pageEntries = state.filteredEntries.slice(start, end);
@@ -156,7 +174,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     els.stringsList.innerHTML = pageEntries.map(entry => renderEntryCard(entry)).join('');
-    els.paginationInfo.textContent = `Mostrando ${start + 1}-${end} de ${total.toLocaleString('pt-BR')} mensagens (Página ${state.currentPage} de ${Math.ceil(total / state.pageSize)})`;
+    els.paginationInfo.textContent = `Mostrando ${start + 1}-${end} de ${total.toLocaleString('pt-BR')} mensagens (Página ${state.currentPage} de ${totalPages})`;
+    
+    if (els.selectJumpPage) {
+      els.selectJumpPage.value = String(state.currentPage);
+    }
+
     renderPagination(total);
 
     // Attach click handlers to edit buttons
@@ -219,12 +242,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // First page
     if (current > 2) {
-      buttons += `<button class="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-xs font-semibold" data-page="1">« 1</button>`;
+      buttons += `<button class="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-xs font-semibold cursor-pointer" data-page="1">« 1</button>`;
     }
 
     // Previous
     buttons += `
-      <button class="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-xs disabled:opacity-40" ${current === 1 ? 'disabled' : ''} data-page="${current - 1}">
+      <button class="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-xs disabled:opacity-40 cursor-pointer" ${current === 1 ? 'disabled' : ''} data-page="${current - 1}">
         Anterior
       </button>
     `;
@@ -237,31 +260,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (range[0] > 2) {
-      buttons += `<span class="px-1 text-gray-600 text-xs">...</span>`;
+      buttons += `<span class="px-1 text-gray-600 text-xs select-none">...</span>`;
     }
 
     for (const page of range) {
       if (page === current) {
         buttons += `<span class="px-3 py-1 rounded-lg bg-indigo-600 text-white font-bold text-xs shadow-sm">${page}</span>`;
       } else {
-        buttons += `<button class="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-xs" data-page="${page}">${page}</button>`;
+        buttons += `<button class="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-xs cursor-pointer" data-page="${page}">${page}</button>`;
       }
     }
 
     if (range[range.length - 1] < totalPages - 1) {
-      buttons += `<span class="px-1 text-gray-600 text-xs">...</span>`;
+      buttons += `<span class="px-1 text-gray-600 text-xs select-none">...</span>`;
     }
 
     // Next
     buttons += `
-      <button class="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-xs disabled:opacity-40" ${current === totalPages ? 'disabled' : ''} data-page="${current + 1}">
+      <button class="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-xs disabled:opacity-40 cursor-pointer" ${current === totalPages ? 'disabled' : ''} data-page="${current + 1}">
         Próxima
       </button>
     `;
 
     // Last page
     if (current < totalPages - 1) {
-      buttons += `<button class="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-xs font-semibold" data-page="${totalPages}">${totalPages} »</button>`;
+      buttons += `<button class="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-xs font-semibold cursor-pointer" data-page="${totalPages}">${totalPages} »</button>`;
     }
 
     els.pagination.innerHTML = buttons;
@@ -270,58 +293,55 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.addEventListener('click', () => {
         const p = parseInt(btn.dataset.page, 10);
         if (p >= 1 && p <= totalPages) {
-          state.currentPage = p;
-          renderList();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          jumpToPage(p);
         }
       });
     });
   }
 
   function jumpToMessage(msgNum) {
-    if (!msgNum || msgNum < 1 || msgNum > state.entries.length) {
+    if (!msgNum || isNaN(msgNum) || msgNum < 1 || msgNum > state.entries.length) {
       showToast(`Número de mensagem inválido. Digite entre 1 e ${state.entries.length}.`, 'error');
       return;
     }
 
-    // Find position in current filtered entries
     const targetIdx = msgNum - 1;
     let filteredPos = state.filteredEntries.findIndex(e => e._idx === targetIdx);
 
     if (filteredPos === -1) {
-      // Clear search to find it in all entries
       state.searchQuery = '';
       els.searchInput.value = '';
       state.filteredEntries = state.entries;
       filteredPos = targetIdx;
+      updatePageDropdown();
     }
 
     const targetPage = Math.floor(filteredPos / state.pageSize) + 1;
-    state.currentPage = targetPage;
-    renderList();
+    jumpToPage(targetPage);
 
     setTimeout(() => {
       const card = document.getElementById(`card-entry-${msgNum}`);
       if (card) {
         card.scrollIntoView({ behavior: 'smooth', block: 'center' });
         card.classList.add('ring-2', 'ring-indigo-500', 'bg-indigo-950/20');
-        setTimeout(() => card.classList.remove('ring-2', 'ring-indigo-500', 'bg-indigo-950/20'), 3000);
+        setTimeout(() => card.classList.remove('ring-2', 'ring-indigo-500', 'bg-indigo-950/20'), 3500);
       }
-    }, 150);
+    }, 200);
 
     showToast(`Página ${targetPage} • Mensagem #${msgNum}`, 'info');
   }
 
   function jumpToPage(pageNum) {
-    const totalPages = Math.ceil(state.filteredEntries.length / state.pageSize);
-    if (!pageNum || pageNum < 1 || pageNum > totalPages) {
+    const totalPages = Math.max(1, Math.ceil(state.filteredEntries.length / state.pageSize));
+    if (!pageNum || isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
       showToast(`Página inválida. Digite entre 1 e ${totalPages}.`, 'error');
       return;
     }
     state.currentPage = pageNum;
+    if (els.selectJumpPage) els.selectJumpPage.value = String(pageNum);
+    if (els.inputJumpPage) els.inputJumpPage.value = String(pageNum);
     renderList();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    showToast(`Navegando para a página ${pageNum}`, 'info');
   }
 
   function openEditModal(entryIndex) {
@@ -511,33 +531,48 @@ ${entry.isPlural ? `\n#### 🇧🇷 Forma Plural:\n\`\`\`\n${proposedMsgstr[1]}\
       applyFilters();
     });
 
+    // Dropdown page select
+    if (els.selectJumpPage) {
+      els.selectJumpPage.addEventListener('change', (e) => {
+        const val = parseInt(e.target.value, 10);
+        jumpToPage(val);
+      });
+    }
+
     // Jump to message
     const handleJumpMsg = () => {
       const val = parseInt(els.inputJumpMessage.value, 10);
       jumpToMessage(val);
     };
-    els.btnJumpMessage.addEventListener('click', handleJumpMsg);
-    els.inputJumpMessage.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') handleJumpMsg();
-    });
+    if (els.btnJumpMessage) els.btnJumpMessage.addEventListener('click', handleJumpMsg);
+    if (els.inputJumpMessage) {
+      els.inputJumpMessage.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleJumpMsg();
+      });
+    }
 
-    // Jump to page
+    // Jump to page (input)
     const handleJumpPg = () => {
       const val = parseInt(els.inputJumpPage.value, 10);
       jumpToPage(val);
     };
-    els.btnJumpPage.addEventListener('click', handleJumpPg);
-    els.inputJumpPage.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') handleJumpPg();
-    });
+    if (els.btnJumpPage) els.btnJumpPage.addEventListener('click', handleJumpPg);
+    if (els.inputJumpPage) {
+      els.inputJumpPage.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleJumpPg();
+      });
+    }
 
     // Page size change
-    els.selectPageSize.addEventListener('change', (e) => {
-      state.pageSize = parseInt(e.target.value, 10);
-      state.currentPage = 1;
-      renderList();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
+    if (els.selectPageSize) {
+      els.selectPageSize.addEventListener('change', (e) => {
+        state.pageSize = parseInt(e.target.value, 10);
+        state.currentPage = 1;
+        updatePageDropdown();
+        renderList();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
 
     // Modal close
     els.btnCancelModal.addEventListener('click', closeEditModal);

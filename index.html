@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Git PO Translation Portal | Português do Brasil (pt_BR)</title>
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -81,28 +84,38 @@
           <input type="text" id="search-input" placeholder="Buscar por texto em inglês (EN), português (PT-BR) ou arquivo..." class="w-full pl-10 pr-4 py-2.5 bg-gray-950 border border-gray-700 rounded-lg text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition">
         </div>
 
-        <!-- Jump Tools & Page Size -->
-        <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-800 text-xs">
+        <!-- Jump Tools & Selectors -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-gray-800 text-xs">
           <div class="flex flex-wrap items-center gap-3">
-            <!-- Jump to Message # -->
+            
+            <!-- Direct Page Dropdown Selector -->
             <div class="flex items-center gap-1.5 bg-gray-950 px-2.5 py-1.5 rounded-lg border border-gray-700">
-              <span class="text-gray-400 font-medium">Ir para mensagem #:</span>
-              <input type="number" id="input-jump-message" min="1" placeholder="Ex: 3000" class="w-20 bg-gray-900 border border-gray-700 rounded px-2 py-0.5 text-xs text-indigo-300 font-mono focus:outline-none focus:border-indigo-500">
-              <button id="btn-jump-message" class="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-bold transition">Ir</button>
+              <span class="text-gray-400 font-medium">📄 Selecionar Página:</span>
+              <select id="select-jump-page" class="bg-gray-900 border border-gray-700 rounded px-2.5 py-1 text-xs text-indigo-300 font-mono focus:outline-none focus:border-indigo-500 cursor-pointer">
+                <option value="1">Página 1</option>
+              </select>
             </div>
 
-            <!-- Jump to Page # -->
+            <!-- Jump to Message # -->
             <div class="flex items-center gap-1.5 bg-gray-950 px-2.5 py-1.5 rounded-lg border border-gray-700">
-              <span class="text-gray-400 font-medium">Ir para página:</span>
-              <input type="number" id="input-jump-page" min="1" placeholder="1.." class="w-16 bg-gray-900 border border-gray-700 rounded px-2 py-0.5 text-xs text-indigo-300 font-mono focus:outline-none focus:border-indigo-500">
-              <button id="btn-jump-page" class="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-bold transition">Ir</button>
+              <span class="text-gray-400 font-medium">🎯 Ir para mensagem #:</span>
+              <input type="number" id="input-jump-message" min="1" placeholder="Ex: 3000" class="w-20 bg-gray-900 border border-gray-700 rounded px-2 py-0.5 text-xs text-indigo-300 font-mono focus:outline-none focus:border-indigo-500">
+              <button id="btn-jump-message" type="button" class="px-2.5 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-bold transition">Ir</button>
             </div>
+
+            <!-- Manual Page Input -->
+            <div class="flex items-center gap-1.5 bg-gray-950 px-2.5 py-1.5 rounded-lg border border-gray-700">
+              <span class="text-gray-400 font-medium">🔢 Digitar página:</span>
+              <input type="number" id="input-jump-page" min="1" placeholder="1.." class="w-16 bg-gray-900 border border-gray-700 rounded px-2 py-0.5 text-xs text-indigo-300 font-mono focus:outline-none focus:border-indigo-500">
+              <button id="btn-jump-page" type="button" class="px-2.5 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-bold transition">Ir</button>
+            </div>
+
           </div>
 
           <!-- Page size selector -->
           <div class="flex items-center gap-2">
             <span class="text-gray-400 font-medium">Itens por página:</span>
-            <select id="select-page-size" class="bg-gray-950 border border-gray-700 rounded-lg px-2.5 py-1 text-xs text-gray-200 focus:outline-none focus:border-indigo-500">
+            <select id="select-page-size" class="bg-gray-950 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-indigo-500 cursor-pointer">
               <option value="30" selected>30 mensagens</option>
               <option value="50">50 mensagens</option>
               <option value="100">100 mensagens</option>
@@ -224,9 +237,9 @@
     <p>Git PO Translation Portal pt_BR • Plataforma Colaborativa de Tradução Oficial do Git em Português do Brasil.</p>
   </footer>
 
-  <!-- Scripts -->
-  <script src="js/po-parser.js"></script>
-  <script src="js/validator.js"></script>
-  <script src="js/app.js"></script>
+  <!-- Scripts with cache-busting -->
+  <script src="js/po-parser.js?v=2.1"></script>
+  <script src="js/validator.js?v=2.1"></script>
+  <script src="js/app.js?v=2.1"></script>
 </body>
 </html>
