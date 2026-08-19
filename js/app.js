@@ -8,8 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     filteredEntries: [],
     currentPage: 1,
     pageSize: 30,
-    currentFilter: 'all', // all, untranslated, translated, fuzzy
     searchQuery: '',
+    totalLines: 0,
     selectedEntryIndex: null,
     github: new GitHubClient('Daniel-Pereira-Linux', 'git-po'),
     translatorName: localStorage.getItem('git_po_author_name') || '',
@@ -17,30 +17,13 @@ document.addEventListener('DOMContentLoaded', () => {
     githubToken: localStorage.getItem('git_po_token') || ''
   };
 
-  // Helper: Detect if string is intentional CLI synopsis or technical token
-  function isCliOrToken(str) {
-    if (!str) return false;
-    const s = str.trim();
-    if (s.startsWith('git ') || s.startsWith('git-')) return true;
-    if (/^<[^>]+>$/.test(s)) return true;
-    if (/^[a-z0-9_\-|]+$/i.test(s) && s.length < 15) return true;
-    if (/^%[a-z0-9%:.*_\-]+$/i.test(s)) return true;
-    if (/^\([a-z0-9_\-|\s()]+\)$/i.test(s) && s.length < 25) return true;
-    if (/^[a-z0-9_\-]+(\/[a-z0-9_\-]+)+$/i.test(s)) return true; // e.g. path/tree-ish
-    return false;
-  }
-
   // DOM Elements
   const els = {
     loadingState: document.getElementById('loading-state'),
     appContent: document.getElementById('app-content'),
     statsTotal: document.getElementById('stats-total'),
-    statsTranslated: document.getElementById('stats-translated'),
-    statsPending: document.getElementById('stats-pending'),
-    statsPercent: document.getElementById('stats-percent'),
-    progressBar: document.getElementById('progress-bar'),
+    statsLines: document.getElementById('stats-lines'),
     searchInput: document.getElementById('search-input'),
-    filterTabs: document.querySelectorAll('.filter-tab'),
     stringsList: document.getElementById('strings-list'),
     pagination: document.getElementById('pagination'),
     paginationInfo: document.getElementById('pagination-info'),
@@ -84,37 +67,14 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       showLoading(true);
       const rawContent = await state.github.fetchPOFile();
+      state.totalLines = rawContent.split('\n').length;
       state.poData = POParser.parse(rawContent);
       
-      // Index entries with ID and status
-      state.entries = state.poData.entries.map((entry, idx) => {
-        const msgstr0 = entry.msgstr[0] || '';
-        const isEmpty = !msgstr0 || msgstr0.trim() === '';
-        const isIdentical = entry.msgid === msgstr0 && entry.msgid.length > 0;
-        const isCliToken = isCliOrToken(entry.msgid);
-        const isFuzzy = entry.flags && entry.flags.includes('fuzzy');
-
-        let statusType = 'translated';
-        if (isFuzzy) {
-          statusType = 'fuzzy';
-        } else if (isEmpty) {
-          statusType = 'untranslated_empty';
-        } else if (isIdentical && !isCliToken) {
-          statusType = 'untranslated_english';
-        } else if (isCliToken && isIdentical) {
-          statusType = 'cli_syntax';
-        }
-
-        const isPending = statusType === 'untranslated_empty' || statusType === 'untranslated_english' || statusType === 'fuzzy';
-
-        return {
-          ...entry,
-          _idx: idx,
-          _statusType: statusType,
-          _isPending: isPending,
-          _isTranslated: !isPending
-        };
-      });
+      // Index entries with sequential ID
+      state.entries = state.poData.entries.map((entry, idx) => ({
+        ...entry,
+        _idx: idx
+      }));
 
       updateStats();
       applyFilters();
@@ -139,37 +99,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateStats() {
     const total = state.entries.length;
-    const translated = state.entries.filter(e => e._isTranslated).length;
-    const pending = state.entries.filter(e => e._isPending).length;
-    const percent = total > 0 ? ((translated / total) * 100).toFixed(1) : 0;
-
     els.statsTotal.textContent = total.toLocaleString('pt-BR');
-    els.statsTranslated.textContent = translated.toLocaleString('pt-BR');
-    els.statsPending.textContent = pending.toLocaleString('pt-BR');
-    els.statsPercent.textContent = `${percent}%`;
-    els.progressBar.style.width = `${percent}%`;
+    els.statsLines.textContent = state.totalLines.toLocaleString('pt-BR');
   }
 
   function applyFilters() {
     const query = state.searchQuery.toLowerCase().trim();
     
-    state.filteredEntries = state.entries.filter(entry => {
-      // Filter status
-      if (state.currentFilter === 'untranslated' && !entry._isPending) return false;
-      if (state.currentFilter === 'fuzzy' && entry._statusType !== 'fuzzy') return false;
-      if (state.currentFilter === 'translated' && !entry._isTranslated) return false;
-
-      // Search query
-      if (query) {
+    if (!query) {
+      state.filteredEntries = state.entries;
+    } else {
+      state.filteredEntries = state.entries.filter(entry => {
         const inMsgid = (entry.msgid || '').toLowerCase().includes(query);
         const inMsgstr = (entry.msgstr || []).join(' ').toLowerCase().includes(query);
         const inRef = (entry.references || []).join(' ').toLowerCase().includes(query);
         const inComments = (entry.extractedComments || []).join(' ').toLowerCase().includes(query);
         return inMsgid || inMsgstr || inRef || inComments;
-      }
-
-      return true;
-    });
+      });
+    }
 
     state.currentPage = 1;
     renderList();
@@ -183,12 +130,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (pageEntries.length === 0) {
       els.stringsList.innerHTML = `
-        <div class="bg-gray-800 rounded-xl p-12 text-center text-gray-400 border border-gray-700">
+        <div class="bg-gray-900 rounded-xl p-12 text-center text-gray-400 border border-gray-800">
           <svg class="w-12 h-12 mx-auto mb-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
           <p class="text-lg font-medium text-gray-300">Nenhuma mensagem encontrada</p>
-          <p class="text-sm mt-1">Tente ajustar a busca ou os filtros aplicados.</p>
+          <p class="text-sm mt-1">Tente pesquisar por outro termo ou nome de arquivo.</p>
         </div>
       `;
       els.pagination.innerHTML = '';
@@ -202,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Attach click handlers to edit buttons
     document.querySelectorAll('.btn-edit-entry').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', () => {
         const idx = parseInt(btn.dataset.idx, 10);
         openEditModal(idx);
       });
@@ -210,51 +157,35 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderEntryCard(entry) {
-    let statusBadge = '';
-    if (entry._statusType === 'fuzzy') {
-      statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-yellow-900/60 text-yellow-300 border border-yellow-700/50">🔄 Fuzzy (Incerteza)</span>';
-    } else if (entry._statusType === 'untranslated_empty') {
-      statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-900/60 text-red-300 border border-red-700/50">⚠️ Não Traduzido (Vazio)</span>';
-    } else if (entry._statusType === 'untranslated_english') {
-      statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-900/60 text-amber-300 border border-amber-700/50">⚠️ Texto em Inglês</span>';
-    } else if (entry._statusType === 'cli_syntax') {
-      statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-900/60 text-blue-300 border border-blue-700/50">⚙️ Sintaxe / Comando CLI</span>';
-    } else {
-      statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-700/50">✅ Traduzido</span>';
-    }
-
     const contextStr = entry.references.slice(0, 3).join(', ') || 'Código-fonte Git';
     const commentsStr = entry.extractedComments.join(' ') || '';
 
     return `
-      <div class="bg-gray-800/90 rounded-xl p-5 border border-gray-700 hover:border-indigo-500/50 transition duration-200 shadow-sm flex flex-col justify-between">
+      <div class="bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-xl p-5 transition duration-200 shadow-sm flex flex-col justify-between">
         <div>
-          <div class="flex items-center justify-between gap-2 mb-3">
-            <div class="flex items-center gap-2 overflow-hidden">
-              <span class="text-xs font-mono text-indigo-400 bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-800/40">#${entry._idx + 1}</span>
-              <span class="text-xs font-mono text-gray-400 truncate max-w-xs md:max-w-md" title="${contextStr}">📁 ${escapeHtml(contextStr)}</span>
-            </div>
-            ${statusBadge}
+          <div class="flex items-center gap-2 mb-3 overflow-hidden">
+            <span class="text-xs font-mono text-indigo-400 bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-800/40 font-semibold">#${entry._idx + 1}</span>
+            <span class="text-xs font-mono text-gray-400 truncate max-w-xs md:max-w-2xl" title="${contextStr}">📁 ${escapeHtml(contextStr)}</span>
           </div>
 
-          ${commentsStr ? `<p class="text-xs text-amber-300/80 bg-amber-950/30 p-2 rounded mb-3 border border-amber-900/30 font-sans">💡 <strong>Nota:</strong> ${escapeHtml(commentsStr)}</p>` : ''}
+          ${commentsStr ? `<p class="text-xs text-amber-300/80 bg-amber-950/30 p-2.5 rounded-lg mb-3 border border-amber-900/30 font-sans">💡 <strong>Nota para tradutores:</strong> ${escapeHtml(commentsStr)}</p>` : ''}
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div class="bg-gray-900/80 p-3.5 rounded-lg border border-gray-700/60">
-              <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Original (EN):</span>
+            <div class="bg-gray-950 p-4 rounded-xl border border-gray-800">
+              <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Original em Inglês (EN):</span>
               <p class="font-mono text-sm text-gray-200 whitespace-pre-wrap break-words">${escapeHtml(entry.msgid)}</p>
-              ${entry.isPlural ? `<p class="font-mono text-xs text-gray-400 mt-2 border-t border-gray-800 pt-2"><span class="text-indigo-300 font-semibold">[Plural]:</span> ${escapeHtml(entry.msgid_plural)}</p>` : ''}
+              ${entry.isPlural ? `<p class="font-mono text-xs text-gray-400 mt-2.5 border-t border-gray-800/80 pt-2"><span class="text-indigo-300 font-semibold">[Plural]:</span> ${escapeHtml(entry.msgid_plural)}</p>` : ''}
             </div>
 
-            <div class="bg-gray-900/80 p-3.5 rounded-lg border border-gray-700/60">
-              <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Tradução Atual (PT-BR):</span>
-              <p class="font-mono text-sm ${entry.msgstr[0] ? 'text-emerald-300' : 'text-gray-500 italic'} whitespace-pre-wrap break-words">${entry.msgstr[0] ? escapeHtml(entry.msgstr[0]) : '(Sem tradução)'}</p>
-              ${entry.isPlural && entry.msgstr[1] ? `<p class="font-mono text-xs text-emerald-400/80 mt-2 border-t border-gray-800 pt-2"><span class="text-indigo-300 font-semibold">[Plural]:</span> ${escapeHtml(entry.msgstr[1])}</p>` : ''}
+            <div class="bg-gray-950 p-4 rounded-xl border border-gray-800">
+              <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Tradução Atual (PT-BR):</span>
+              <p class="font-mono text-sm ${entry.msgstr[0] ? 'text-emerald-300' : 'text-gray-500 italic'} whitespace-pre-wrap break-words">${entry.msgstr[0] ? escapeHtml(entry.msgstr[0]) : '(Vazio / Sem tradução)'}</p>
+              ${entry.isPlural && entry.msgstr[1] ? `<p class="font-mono text-xs text-emerald-400/80 mt-2.5 border-t border-gray-800/80 pt-2"><span class="text-indigo-300 font-semibold">[Plural]:</span> ${escapeHtml(entry.msgstr[1])}</p>` : ''}
             </div>
           </div>
         </div>
 
-        <div class="flex justify-end pt-2 border-t border-gray-700/50">
+        <div class="flex justify-end pt-3 border-t border-gray-800/70">
           <button data-idx="${entry._idx}" class="btn-edit-entry inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition shadow-sm">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
             Editar / Propor Tradução
@@ -274,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let buttons = '';
     // Previous
     buttons += `
-      <button class="px-3 py-1.5 rounded-lg border border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700 text-sm disabled:opacity-40" ${state.currentPage === 1 ? 'disabled' : ''} data-page="${state.currentPage - 1}">
+      <button class="px-3 py-1.5 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-sm disabled:opacity-40" ${state.currentPage === 1 ? 'disabled' : ''} data-page="${state.currentPage - 1}">
         Anterior
       </button>
     `;
@@ -288,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Next
     buttons += `
-      <button class="px-3 py-1.5 rounded-lg border border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700 text-sm disabled:opacity-40" ${state.currentPage === totalPages ? 'disabled' : ''} data-page="${state.currentPage + 1}">
+      <button class="px-3 py-1.5 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-sm disabled:opacity-40" ${state.currentPage === totalPages ? 'disabled' : ''} data-page="${state.currentPage + 1}">
         Próxima
       </button>
     `;
@@ -447,10 +378,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Update state
       entry.msgstr = proposedMsgstr;
-      entry._statusType = 'translated';
-      entry._isPending = false;
-      entry._isTranslated = true;
-      updateStats();
       renderList();
 
       // Open PR in new tab
@@ -486,16 +413,6 @@ document.addEventListener('DOMContentLoaded', () => {
     els.searchInput.addEventListener('input', (e) => {
       state.searchQuery = e.target.value;
       applyFilters();
-    });
-
-    // Filter tabs
-    els.filterTabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        els.filterTabs.forEach(t => t.classList.remove('active', 'bg-indigo-600', 'text-white'));
-        tab.classList.add('active', 'bg-indigo-600', 'text-white');
-        state.currentFilter = tab.dataset.filter;
-        applyFilters();
-      });
     });
 
     // Modal close

@@ -6,23 +6,6 @@
   <title>Git PO Translation Portal | Português do Brasil (pt_BR)</title>
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#eef2ff',
-              500: '#6366f1',
-              600: '#4f46e5',
-              700: '#4338ca',
-            }
-          }
-        }
-      }
-    }
-  </script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
     body {
@@ -66,57 +49,40 @@
     <div id="loading-state" class="text-center py-24">
       <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent mb-4"></div>
       <h2 class="text-xl font-bold text-gray-200">Carregando po/pt_BR.po do repositório...</h2>
-      <p class="text-sm text-gray-400 mt-1">Obtendo 6.391+ mensagens traduzidas diretamente do GitHub</p>
+      <p class="text-sm text-gray-400 mt-1">Carregando mensagens traduzíveis do arquivo oficial</p>
     </div>
 
     <!-- App Content (Hidden while loading) -->
     <div id="app-content" class="hidden space-y-6">
 
-      <!-- Statistics Banner -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <!-- Statistics / Info Header -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl shadow-sm">
           <span class="text-xs text-gray-400 font-medium uppercase tracking-wider block mb-1">Total de Mensagens</span>
           <span id="stats-total" class="text-2xl font-bold text-indigo-400 font-mono">-</span>
         </div>
         <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl shadow-sm">
-          <span class="text-xs text-emerald-400/80 font-medium uppercase tracking-wider block mb-1">Traduzidas</span>
-          <span id="stats-translated" class="text-2xl font-bold text-emerald-400 font-mono">-</span>
+          <span class="text-xs text-gray-400 font-medium uppercase tracking-wider block mb-1">Total de Linhas no Arquivo</span>
+          <span id="stats-lines" class="text-2xl font-bold text-emerald-400 font-mono">-</span>
         </div>
         <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl shadow-sm">
-          <span class="text-xs text-amber-400/80 font-medium uppercase tracking-wider block mb-1">Pendentes / Revisão</span>
-          <span id="stats-pending" class="text-2xl font-bold text-amber-400 font-mono">-</span>
-        </div>
-        <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl shadow-sm flex flex-col justify-between">
-          <div class="flex justify-between items-center mb-1">
-            <span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Cobertura</span>
-            <span id="stats-percent" class="text-xs font-bold text-indigo-400 font-mono">-</span>
-          </div>
-          <div class="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden border border-gray-700">
-            <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-emerald-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
-          </div>
+          <span class="text-xs text-gray-400 font-medium uppercase tracking-wider block mb-1">Arquivo Fonte</span>
+          <span class="text-sm font-semibold text-gray-200 font-mono block mt-1">po/pt_BR.po</span>
         </div>
       </div>
 
-      <!-- Controls & Filter Bar -->
-      <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl shadow-sm flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
+      <!-- Controls Bar -->
+      <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl shadow-sm">
         <!-- Search Input -->
-        <div class="relative flex-1">
+        <div class="relative w-full">
           <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
           </div>
-          <input type="text" id="search-input" placeholder="Buscar no msgid (EN), msgstr (PT-BR) ou arquivo..." class="w-full pl-10 pr-4 py-2 bg-gray-950 border border-gray-700 rounded-lg text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition">
-        </div>
-
-        <!-- Filter Tabs -->
-        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
-          <button data-filter="all" class="filter-tab active px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition">Todas</button>
-          <button data-filter="untranslated" class="filter-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 text-gray-300 hover:bg-gray-700 transition">⚠️ Não Traduzidas</button>
-          <button data-filter="fuzzy" class="filter-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 text-gray-300 hover:bg-gray-700 transition">🔄 Fuzzy</button>
-          <button data-filter="translated" class="filter-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 text-gray-300 hover:bg-gray-700 transition">✅ Traduzidas</button>
+          <input type="text" id="search-input" placeholder="Buscar no texto original (EN), na tradução (PT-BR) ou nome de arquivo..." class="w-full pl-10 pr-4 py-2.5 bg-gray-950 border border-gray-700 rounded-lg text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition">
         </div>
       </div>
 
-      <!-- Live String List -->
+      <!-- String List -->
       <div id="strings-list" class="space-y-4"></div>
 
       <!-- Pagination Footer -->
