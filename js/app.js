@@ -1,5 +1,5 @@
 /**
- * Main Application Controller for Git PO Portal
+ * Main Application Controller for Git PO Portal with GitHub OAuth
  */
 document.addEventListener('DOMContentLoaded', () => {
   const state = {
@@ -11,10 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     searchQuery: '',
     totalLines: 0,
     selectedEntryIndex: null,
-    github: new GitHubClient('Daniel-Pereira-Linux', 'git-po'),
-    translatorName: localStorage.getItem('git_po_author_name') || '',
-    translatorEmail: localStorage.getItem('git_po_author_email') || '',
-    githubToken: localStorage.getItem('git_po_token') || ''
+    github: new GitHubClient(),
+    authToken: localStorage.getItem('git_po_oauth_token') || null,
+    userProfile: null
   };
 
   // DOM Elements
@@ -27,6 +26,12 @@ document.addEventListener('DOMContentLoaded', () => {
     stringsList: document.getElementById('strings-list'),
     pagination: document.getElementById('pagination'),
     paginationInfo: document.getElementById('pagination-info'),
+    // Auth UI
+    btnLoginGitHub: document.getElementById('btn-login-github'),
+    userProfile: document.getElementById('user-profile'),
+    userAvatar: document.getElementById('user-avatar'),
+    userName: document.getElementById('user-name'),
+    btnLogout: document.getElementById('btn-logout'),
     // Modal elements
     editModal: document.getElementById('edit-modal'),
     modalContext: document.getElementById('modal-context'),
@@ -37,9 +42,12 @@ document.addEventListener('DOMContentLoaded', () => {
     pluralContainer: document.getElementById('plural-container'),
     singleContainer: document.getElementById('single-container'),
     validationBox: document.getElementById('validation-box'),
-    inputAuthorName: document.getElementById('author-name'),
-    inputAuthorEmail: document.getElementById('author-email'),
-    inputGhToken: document.getElementById('github-token'),
+    modalAuthLoggedIn: document.getElementById('modal-auth-logged-in'),
+    modalAuthLoggedOut: document.getElementById('modal-auth-logged-out'),
+    modalUserAvatar: document.getElementById('modal-user-avatar'),
+    modalUserDisplay: document.getElementById('modal-user-display'),
+    modalUserEmail: document.getElementById('modal-user-email'),
+    btnModalLogin: document.getElementById('btn-modal-login'),
     btnSubmitPR: document.getElementById('btn-submit-pr'),
     btnCancelModal: document.getElementById('btn-cancel-modal'),
     btnCloseModal: document.getElementById('btn-close-modal'),
@@ -53,14 +61,73 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function init() {
     setupEventListeners();
-    loadStoredCredentials();
+    await handleAuthInit();
     await loadPOData();
   }
 
-  function loadStoredCredentials() {
-    if (els.inputAuthorName) els.inputAuthorName.value = state.translatorName;
-    if (els.inputAuthorEmail) els.inputAuthorEmail.value = state.translatorEmail;
-    if (els.inputGhToken) els.inputGhToken.value = state.githubToken;
+  async function handleAuthInit() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+
+    if (code) {
+      try {
+        showToast('Autenticando com o GitHub...', 'info');
+        const token = await state.github.handleOAuthCallback(code);
+        state.authToken = token;
+        localStorage.setItem('git_po_oauth_token', token);
+
+        // Remove ?code from URL cleanly
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } catch (err) {
+        console.error(err);
+        showToast(`Erro na autenticação: ${err.message}`, 'error');
+      }
+    }
+
+    if (state.authToken) {
+      try {
+        state.userProfile = await state.github.fetchUserProfile(state.authToken);
+        updateAuthUI(true);
+      } catch (err) {
+        console.warn('Invalid or expired token, logging out:', err);
+        logout();
+      }
+    } else {
+      updateAuthUI(false);
+    }
+  }
+
+  function updateAuthUI(isLoggedIn) {
+    if (isLoggedIn && state.userProfile) {
+      els.btnLoginGitHub.classList.add('hidden');
+      els.userProfile.classList.remove('hidden');
+      els.userProfile.classList.add('flex');
+      els.userAvatar.src = state.userProfile.avatarUrl;
+      els.userName.textContent = state.userProfile.name || state.userProfile.login;
+
+      // Update modal auth box
+      els.modalAuthLoggedOut.classList.add('hidden');
+      els.modalAuthLoggedIn.classList.remove('hidden');
+      els.modalUserAvatar.src = state.userProfile.avatarUrl;
+      els.modalUserDisplay.textContent = `${state.userProfile.name} (@${state.userProfile.login})`;
+      els.modalUserEmail.textContent = state.userProfile.email;
+    } else {
+      els.btnLoginGitHub.classList.remove('hidden');
+      els.userProfile.classList.add('hidden');
+      els.userProfile.classList.remove('flex');
+
+      // Update modal auth box
+      els.modalAuthLoggedOut.classList.remove('hidden');
+      els.modalAuthLoggedIn.classList.add('hidden');
+    }
+  }
+
+  function logout() {
+    state.authToken = null;
+    state.userProfile = null;
+    localStorage.removeItem('git_po_oauth_token');
+    updateAuthUI(false);
+    showToast('Você saiu da sua conta.', 'info');
   }
 
   async function loadPOData() {
@@ -70,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
       state.totalLines = rawContent.split('\n').length;
       state.poData = POParser.parse(rawContent);
       
-      // Index entries with sequential ID
+      // Index entries
       state.entries = state.poData.entries.map((entry, idx) => ({
         ...entry,
         _idx: idx
@@ -256,6 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
       els.modalMsgstrSingle.value = entry.msgstr[0] || '';
     }
 
+    updateAuthUI(!!state.userProfile);
     runLiveValidation();
     els.editModal.classList.remove('hidden');
   }
@@ -307,31 +375,20 @@ document.addEventListener('DOMContentLoaded', () => {
     html += '</div>';
 
     els.validationBox.innerHTML = html;
-    els.btnSubmitPR.disabled = !result.isValid;
+    
+    // Enable submit only if valid AND user is logged in
+    els.btnSubmitPR.disabled = !result.isValid || !state.userProfile;
   }
 
   async function submitPullRequest() {
     if (state.selectedEntryIndex === null) return;
     const entry = state.entries[state.selectedEntryIndex];
 
-    const name = els.inputAuthorName.value.trim();
-    const email = els.inputAuthorEmail.value.trim();
-    const token = els.inputGhToken.value.trim();
-
-    if (!name || !email) {
-      showToast('Por favor, informe seu Nome e E-mail para assinar a tradução.', 'error');
+    if (!state.userProfile || !state.authToken) {
+      showToast('Por favor, conecte-se com o GitHub para enviar a tradução.', 'error');
+      state.github.startOAuthLogin();
       return;
     }
-
-    if (!token) {
-      showToast('Por favor, informe seu GitHub Personal Access Token para abrir o Pull Request.', 'error');
-      return;
-    }
-
-    // Save credentials to localStorage
-    localStorage.setItem('git_po_author_name', name);
-    localStorage.setItem('git_po_author_email', email);
-    localStorage.setItem('git_po_token', token);
 
     let proposedMsgstr = [];
     if (entry.isPlural) {
@@ -346,14 +403,19 @@ document.addEventListener('DOMContentLoaded', () => {
         return {
           ...e,
           msgstr: proposedMsgstr,
-          flags: (e.flags || []).filter(f => f !== 'fuzzy') // clear fuzzy
+          flags: (e.flags || []).filter(f => f !== 'fuzzy')
         };
       }
       return e;
     });
 
-    // Serialize new PO file with updated Last-Translator
-    const serializedPO = POParser.serialize(state.poData.header, updatedEntries, name, email);
+    // Serialize new PO file with verified OAuth author name & email in Last-Translator
+    const serializedPO = POParser.serialize(
+      state.poData.header,
+      updatedEntries,
+      state.userProfile.name,
+      state.userProfile.email
+    );
 
     try {
       els.btnSubmitPR.disabled = true;
@@ -367,10 +429,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const result = await state.github.createPullRequest({
         newPOContent: serializedPO,
-        translatorName: name,
-        translatorEmail: email,
+        translatorName: state.userProfile.name,
+        translatorEmail: state.userProfile.email,
         stringContext: entry.msgid,
-        token: token
+        token: state.authToken
       });
 
       closeEditModal();
@@ -414,6 +476,11 @@ document.addEventListener('DOMContentLoaded', () => {
       state.searchQuery = e.target.value;
       applyFilters();
     });
+
+    // Auth events
+    els.btnLoginGitHub.addEventListener('click', () => state.github.startOAuthLogin());
+    els.btnModalLogin.addEventListener('click', () => state.github.startOAuthLogin());
+    els.btnLogout.addEventListener('click', logout);
 
     // Modal close
     els.btnCancelModal.addEventListener('click', closeEditModal);

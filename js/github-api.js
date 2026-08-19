@@ -1,19 +1,96 @@
 /**
- * GitHub API Client for Git PO Portal
+ * GitHub API & OAuth Client for Git PO Portal
  */
 class GitHubClient {
-  constructor(owner = 'Daniel-Pereira-Linux', repo = 'git-po') {
-    this.owner = owner;
-    this.repo = repo;
-    this.branch = 'master';
-    this.filePath = 'po/pt_BR.po';
+  constructor() {
+    const config = window.APP_CONFIG || {};
+    this.owner = config.REPO_OWNER || 'Daniel-Pereira-Linux';
+    this.repo = config.REPO_NAME || 'git-po';
+    this.branch = config.TARGET_BRANCH || 'master';
+    this.filePath = config.PO_FILE_PATH || 'po/pt_BR.po';
+    this.clientId = config.GITHUB_CLIENT_ID || '';
+    this.gatekeeperUrl = config.OAUTH_GATEKEEPER_URL || '';
+  }
+
+  /**
+   * Start GitHub OAuth Authorization Flow
+   */
+  startOAuthLogin() {
+    const redirectUri = window.location.origin + window.location.pathname;
+    const scope = 'public_repo,user:email';
+    const authUrl = `https://github.com/login/oauth/authorize?client_id=${this.clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
+    window.location.href = authUrl;
+  }
+
+  /**
+   * Handle OAuth redirect with authorization code
+   */
+  async handleOAuthCallback(code) {
+    if (!this.gatekeeperUrl) {
+      throw new Error('URL do Gatekeeper OAuth não configurada.');
+    }
+
+    const response = await fetch(`${this.gatekeeperUrl}?code=${encodeURIComponent(code)}`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(`Falha na autenticação OAuth: ${err.error || response.statusText}`);
+    }
+
+    const data = await response.json();
+    if (data.error) {
+      throw new Error(`Erro retornado pelo GitHub: ${data.error_description || data.error}`);
+    }
+
+    return data.access_token;
+  }
+
+  /**
+   * Fetch authenticated user's profile and primary email
+   */
+  async fetchUserProfile(token) {
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github.v3+json'
+    };
+
+    const userRes = await fetch('https://api.github.com/user', { headers });
+    if (!userRes.ok) {
+      throw new Error('Não foi possível obter os dados do perfil do usuário.');
+    }
+    const userData = await userRes.json();
+
+    // Fetch email if not public in profile
+    let email = userData.email;
+    if (!email) {
+      try {
+        const emailsRes = await fetch('https://api.github.com/user/emails', { headers });
+        if (emailsRes.ok) {
+          const emails = await emailsRes.json();
+          const primary = emails.find(e => e.primary) || emails[0];
+          if (primary) email = primary.email;
+        }
+      } catch (e) {
+        console.warn('Could not fetch emails:', e);
+      }
+    }
+
+    return {
+      login: userData.login,
+      name: userData.name || userData.login,
+      email: email || `${userData.login}@users.noreply.github.com`,
+      avatarUrl: userData.avatar_url,
+      htmlUrl: userData.html_url
+    };
   }
 
   /**
    * Fetch the latest po/pt_BR.po file content
    */
   async fetchPOFile() {
-    // Try raw github user content first for speed without rate limits
     const rawUrl = `https://raw.githubusercontent.com/${this.owner}/${this.repo}/${this.branch}/${this.filePath}?t=${Date.now()}`;
     try {
       const response = await fetch(rawUrl);
@@ -39,7 +116,7 @@ class GitHubClient {
    */
   async createPullRequest({ newPOContent, translatorName, translatorEmail, stringContext, token }) {
     if (!token) {
-      throw new Error('Token do GitHub é necessário para criar o Pull Request diretamente.');
+      throw new Error('Usuário precisa estar autenticado com o GitHub para criar o Pull Request.');
     }
 
     const headers = {
@@ -130,7 +207,7 @@ class GitHubClient {
 - [x] Formatação Gettext aplicada
 - [x] Termos do glossário verificados
 
-*Pull Request gerado automaticamente pelo **Git PO Translation Portal**.*`;
+*Pull Request autenticado e gerado via **GitHub OAuth** pelo portal de tradução.*`;
 
     const prRes = await fetch(`https://api.github.com/repos/${this.owner}/${this.repo}/pulls`, {
       method: 'POST',
