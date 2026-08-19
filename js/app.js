@@ -1,5 +1,5 @@
 /**
- * Main Application Controller for Git PO Portal (100% Native GitHub Flow)
+ * Main Application Controller for Git PO Portal (with Fast Page & Message Jumps)
  */
 document.addEventListener('DOMContentLoaded', () => {
   const state = {
@@ -26,6 +26,11 @@ document.addEventListener('DOMContentLoaded', () => {
     statsTotal: document.getElementById('stats-total'),
     statsLines: document.getElementById('stats-lines'),
     searchInput: document.getElementById('search-input'),
+    inputJumpMessage: document.getElementById('input-jump-message'),
+    btnJumpMessage: document.getElementById('btn-jump-message'),
+    inputJumpPage: document.getElementById('input-jump-page'),
+    btnJumpPage: document.getElementById('btn-jump-page'),
+    selectPageSize: document.getElementById('select-page-size'),
     stringsList: document.getElementById('strings-list'),
     pagination: document.getElementById('pagination'),
     paginationInfo: document.getElementById('pagination-info'),
@@ -151,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     els.stringsList.innerHTML = pageEntries.map(entry => renderEntryCard(entry)).join('');
-    els.paginationInfo.textContent = `Mostrando ${start + 1}-${end} de ${total.toLocaleString('pt-BR')} mensagens`;
+    els.paginationInfo.textContent = `Mostrando ${start + 1}-${end} de ${total.toLocaleString('pt-BR')} mensagens (Página ${state.currentPage} de ${Math.ceil(total / state.pageSize)})`;
     renderPagination(total);
 
     // Attach click handlers to edit buttons
@@ -168,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const commentsStr = entry.extractedComments.join(' ') || '';
 
     return `
-      <div class="bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-xl p-5 transition duration-200 shadow-sm flex flex-col justify-between">
+      <div id="card-entry-${entry._idx + 1}" class="bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-xl p-5 transition duration-200 shadow-sm flex flex-col justify-between">
         <div>
           <div class="flex items-center gap-2 mb-3 overflow-hidden">
             <span class="text-xs font-mono text-indigo-400 bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-800/40 font-semibold">#${entry._idx + 1}</span>
@@ -209,27 +214,55 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    const current = state.currentPage;
     let buttons = '';
+
+    // First page
+    if (current > 2) {
+      buttons += `<button class="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-xs font-semibold" data-page="1">« 1</button>`;
+    }
+
     // Previous
     buttons += `
-      <button class="px-3 py-1.5 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-sm disabled:opacity-40" ${state.currentPage === 1 ? 'disabled' : ''} data-page="${state.currentPage - 1}">
+      <button class="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-xs disabled:opacity-40" ${current === 1 ? 'disabled' : ''} data-page="${current - 1}">
         Anterior
       </button>
     `;
 
-    // Page indicator
-    buttons += `
-      <span class="px-4 py-1.5 text-sm text-gray-300 font-medium">
-        Página ${state.currentPage} de ${totalPages}
-      </span>
-    `;
+    // Numeric page buttons with sliding window
+    const delta = 2;
+    const range = [];
+    for (let i = Math.max(1, current - delta); i <= Math.min(totalPages, current + delta); i++) {
+      range.push(i);
+    }
+
+    if (range[0] > 2) {
+      buttons += `<span class="px-1 text-gray-600 text-xs">...</span>`;
+    }
+
+    for (const page of range) {
+      if (page === current) {
+        buttons += `<span class="px-3 py-1 rounded-lg bg-indigo-600 text-white font-bold text-xs shadow-sm">${page}</span>`;
+      } else {
+        buttons += `<button class="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-xs" data-page="${page}">${page}</button>`;
+      }
+    }
+
+    if (range[range.length - 1] < totalPages - 1) {
+      buttons += `<span class="px-1 text-gray-600 text-xs">...</span>`;
+    }
 
     // Next
     buttons += `
-      <button class="px-3 py-1.5 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-sm disabled:opacity-40" ${state.currentPage === totalPages ? 'disabled' : ''} data-page="${state.currentPage + 1}">
+      <button class="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-xs disabled:opacity-40" ${current === totalPages ? 'disabled' : ''} data-page="${current + 1}">
         Próxima
       </button>
     `;
+
+    // Last page
+    if (current < totalPages - 1) {
+      buttons += `<button class="px-2.5 py-1 rounded-lg border border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800 text-xs font-semibold" data-page="${totalPages}">${totalPages} »</button>`;
+    }
 
     els.pagination.innerHTML = buttons;
 
@@ -243,6 +276,52 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     });
+  }
+
+  function jumpToMessage(msgNum) {
+    if (!msgNum || msgNum < 1 || msgNum > state.entries.length) {
+      showToast(`Número de mensagem inválido. Digite entre 1 e ${state.entries.length}.`, 'error');
+      return;
+    }
+
+    // Find position in current filtered entries
+    const targetIdx = msgNum - 1;
+    let filteredPos = state.filteredEntries.findIndex(e => e._idx === targetIdx);
+
+    if (filteredPos === -1) {
+      // Clear search to find it in all entries
+      state.searchQuery = '';
+      els.searchInput.value = '';
+      state.filteredEntries = state.entries;
+      filteredPos = targetIdx;
+    }
+
+    const targetPage = Math.floor(filteredPos / state.pageSize) + 1;
+    state.currentPage = targetPage;
+    renderList();
+
+    setTimeout(() => {
+      const card = document.getElementById(`card-entry-${msgNum}`);
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.add('ring-2', 'ring-indigo-500', 'bg-indigo-950/20');
+        setTimeout(() => card.classList.remove('ring-2', 'ring-indigo-500', 'bg-indigo-950/20'), 3000);
+      }
+    }, 150);
+
+    showToast(`Página ${targetPage} • Mensagem #${msgNum}`, 'info');
+  }
+
+  function jumpToPage(pageNum) {
+    const totalPages = Math.ceil(state.filteredEntries.length / state.pageSize);
+    if (!pageNum || pageNum < 1 || pageNum > totalPages) {
+      showToast(`Página inválida. Digite entre 1 e ${totalPages}.`, 'error');
+      return;
+    }
+    state.currentPage = pageNum;
+    renderList();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showToast(`Navegando para a página ${pageNum}`, 'info');
   }
 
   function openEditModal(entryIndex) {
@@ -404,7 +483,6 @@ ${entry.isPlural ? `\n#### 🇧🇷 Forma Plural:\n\`\`\`\n${proposedMsgstr[1]}\
 
 \`Signed-off-by: ${authorName} <${authorEmail}>\``;
 
-    // Open GitHub Web Editor or Issue template with pre-filled content
     const githubIssueUrl = `https://github.com/${state.repoOwner}/${state.repoName}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
     
     closeEditModal();
@@ -431,6 +509,34 @@ ${entry.isPlural ? `\n#### 🇧🇷 Forma Plural:\n\`\`\`\n${proposedMsgstr[1]}\
     els.searchInput.addEventListener('input', (e) => {
       state.searchQuery = e.target.value;
       applyFilters();
+    });
+
+    // Jump to message
+    const handleJumpMsg = () => {
+      const val = parseInt(els.inputJumpMessage.value, 10);
+      jumpToMessage(val);
+    };
+    els.btnJumpMessage.addEventListener('click', handleJumpMsg);
+    els.inputJumpMessage.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleJumpMsg();
+    });
+
+    // Jump to page
+    const handleJumpPg = () => {
+      const val = parseInt(els.inputJumpPage.value, 10);
+      jumpToPage(val);
+    };
+    els.btnJumpPage.addEventListener('click', handleJumpPg);
+    els.inputJumpPage.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleJumpPg();
+    });
+
+    // Page size change
+    els.selectPageSize.addEventListener('change', (e) => {
+      state.pageSize = parseInt(e.target.value, 10);
+      state.currentPage = 1;
+      renderList();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
     // Modal close

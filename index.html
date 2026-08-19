@@ -71,13 +71,44 @@
         </div>
       </div>
 
-      <!-- Controls Bar -->
-      <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl shadow-sm">
+      <!-- Controls & Quick Jump Bar -->
+      <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl shadow-sm space-y-3">
+        <!-- Search Input -->
         <div class="relative w-full">
           <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
           </div>
-          <input type="text" id="search-input" placeholder="Buscar no texto original (EN), na tradução (PT-BR) ou nome de arquivo..." class="w-full pl-10 pr-4 py-2.5 bg-gray-950 border border-gray-700 rounded-lg text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition">
+          <input type="text" id="search-input" placeholder="Buscar por texto em inglês (EN), português (PT-BR) ou arquivo..." class="w-full pl-10 pr-4 py-2.5 bg-gray-950 border border-gray-700 rounded-lg text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition">
+        </div>
+
+        <!-- Jump Tools & Page Size -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-800 text-xs">
+          <div class="flex flex-wrap items-center gap-3">
+            <!-- Jump to Message # -->
+            <div class="flex items-center gap-1.5 bg-gray-950 px-2.5 py-1.5 rounded-lg border border-gray-700">
+              <span class="text-gray-400 font-medium">Ir para mensagem #:</span>
+              <input type="number" id="input-jump-message" min="1" placeholder="Ex: 3000" class="w-20 bg-gray-900 border border-gray-700 rounded px-2 py-0.5 text-xs text-indigo-300 font-mono focus:outline-none focus:border-indigo-500">
+              <button id="btn-jump-message" class="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-bold transition">Ir</button>
+            </div>
+
+            <!-- Jump to Page # -->
+            <div class="flex items-center gap-1.5 bg-gray-950 px-2.5 py-1.5 rounded-lg border border-gray-700">
+              <span class="text-gray-400 font-medium">Ir para página:</span>
+              <input type="number" id="input-jump-page" min="1" placeholder="1.." class="w-16 bg-gray-900 border border-gray-700 rounded px-2 py-0.5 text-xs text-indigo-300 font-mono focus:outline-none focus:border-indigo-500">
+              <button id="btn-jump-page" class="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-bold transition">Ir</button>
+            </div>
+          </div>
+
+          <!-- Page size selector -->
+          <div class="flex items-center gap-2">
+            <span class="text-gray-400 font-medium">Itens por página:</span>
+            <select id="select-page-size" class="bg-gray-950 border border-gray-700 rounded-lg px-2.5 py-1 text-xs text-gray-200 focus:outline-none focus:border-indigo-500">
+              <option value="30" selected>30 mensagens</option>
+              <option value="50">50 mensagens</option>
+              <option value="100">100 mensagens</option>
+              <option value="200">200 mensagens</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -85,9 +116,9 @@
       <div id="strings-list" class="space-y-4"></div>
 
       <!-- Pagination Footer -->
-      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-800">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-800">
         <span id="pagination-info" class="text-xs text-gray-400 font-mono">Mostrando 0 de 0 mensagens</span>
-        <div id="pagination" class="flex items-center gap-2"></div>
+        <div id="pagination" class="flex flex-wrap items-center gap-1.5"></div>
       </div>
 
     </div>
