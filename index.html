@@ -33,27 +33,11 @@
         </div>
       </div>
 
-      <!-- Auth & Actions -->
       <div class="flex items-center gap-3">
-        <a href="https://github.com/Daniel-Pereira-Linux/git-po" target="_blank" class="hidden sm:inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold border border-gray-700 transition">
+        <a href="https://github.com/Daniel-Pereira-Linux/git-po" target="_blank" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold border border-gray-700 transition shadow-sm">
           <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
-          Repositório Fork
+          Repositório no GitHub
         </a>
-
-        <!-- User Logged In State -->
-        <div id="user-profile" class="hidden items-center gap-3 bg-gray-800/90 pl-1.5 pr-3 py-1 rounded-full border border-gray-700">
-          <img id="user-avatar" src="" alt="Avatar" class="w-7 h-7 rounded-full bg-gray-700 object-cover">
-          <span id="user-name" class="text-xs font-semibold text-gray-200"></span>
-          <button id="btn-logout" class="text-xs text-gray-400 hover:text-red-400 transition" title="Sair da conta">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-          </button>
-        </div>
-
-        <!-- User Logged Out State -->
-        <button id="btn-login-github" class="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition">
-          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
-          Entrar com GitHub
-        </button>
       </div>
     </div>
   </header>
@@ -65,7 +49,7 @@
     <div id="loading-state" class="text-center py-24">
       <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent mb-4"></div>
       <h2 class="text-xl font-bold text-gray-200">Carregando po/pt_BR.po do repositório...</h2>
-      <p class="text-sm text-gray-400 mt-1">Carregando mensagens traduzíveis do arquivo oficial</p>
+      <p class="text-sm text-gray-400 mt-1">Obtendo mensagens traduzíveis diretamente do repositório oficial</p>
     </div>
 
     <!-- App Content (Hidden while loading) -->
@@ -161,42 +145,39 @@
           <div id="validation-box"></div>
         </div>
 
-        <!-- Author Identification (OAuth Verified Profile) -->
-        <div id="modal-auth-box" class="bg-gray-950/80 rounded-xl p-4 border border-gray-800">
-          <!-- Logged in view -->
-          <div id="modal-auth-logged-in" class="hidden flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <img id="modal-user-avatar" src="" alt="Avatar" class="w-10 h-10 rounded-full border border-indigo-500/50">
-              <div>
-                <span class="text-xs text-gray-400 block font-medium">Assinando Pull Request como:</span>
-                <span id="modal-user-display" class="text-sm font-bold text-gray-100"></span>
-                <span id="modal-user-email" class="text-xs text-indigo-400 font-mono block"></span>
-              </div>
+        <!-- Author Identification for Last-Translator -->
+        <div class="bg-gray-950/60 rounded-xl p-4 border border-gray-800 space-y-3">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center gap-1.5">
+            👤 Identificação do Autor (Para o cabeçalho Last-Translator e Signed-off-by)
+          </h4>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Seu Nome Completo:</label>
+              <input type="text" id="author-name" placeholder="Ex: Daniel Pereira" class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-gray-100 focus:outline-none focus:border-indigo-500">
             </div>
-            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-950 text-emerald-300 border border-emerald-800/50 flex items-center gap-1">
-              ✅ Autenticado via GitHub
-            </span>
-          </div>
-
-          <!-- Logged out prompt -->
-          <div id="modal-auth-logged-out" class="text-center py-3">
-            <p class="text-sm text-gray-300 font-medium mb-3">Para abrir o Pull Request oficial com sua assinatura, conecte-se com o GitHub:</p>
-            <button id="btn-modal-login" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-lg shadow-indigo-600/30 transition">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
-              Entrar com GitHub
-            </button>
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Seu E-mail:</label>
+              <input type="email" id="author-email" placeholder="Ex: daniel@exemplo.com" class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-gray-100 focus:outline-none focus:border-indigo-500">
+            </div>
           </div>
         </div>
 
       </div>
 
       <!-- Modal Footer -->
-      <div class="px-6 py-4 border-t border-gray-800 bg-gray-900/90 flex items-center justify-between">
-        <button id="btn-cancel-modal" class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium transition">Cancelar</button>
-        <button id="btn-submit-pr" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-lg shadow-indigo-600/30 transition disabled:opacity-50 disabled:cursor-not-allowed">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-          Enviar Tradução & Abrir Pull Request
-        </button>
+      <div class="px-6 py-4 border-t border-gray-800 bg-gray-900/90 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <button id="btn-cancel-modal" class="w-full sm:w-auto px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium transition">Cancelar</button>
+        
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <button id="btn-download-po" class="px-4 py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold border border-gray-700 transition" title="Baixar o arquivo .po atualizado com a sua tradução">
+            💾 Baixar .po
+          </button>
+          <button id="btn-submit-pr" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-lg shadow-indigo-600/30 transition disabled:opacity-50 disabled:cursor-not-allowed">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+            Abrir Proposta no GitHub
+          </button>
+        </div>
       </div>
 
     </div>
@@ -213,10 +194,8 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="js/config.js"></script>
   <script src="js/po-parser.js"></script>
   <script src="js/validator.js"></script>
-  <script src="js/github-api.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
