@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Git PO Translation Portal | Português do Brasil (pt_BR)</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    code, pre, .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- Navigation Header -->
+  <header class="border-b border-gray-800 bg-gray-900/90 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md shadow-indigo-500/20 text-white font-black text-xl">
+          git
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-tight flex items-center gap-2">
+            Git PO Portal <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800/50">pt_BR</span>
+          </h1>
+          <p class="text-xs text-gray-400">Plataforma Colaborativa de Tradução Oficial do Git</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="https://github.com/Daniel-Pereira-Linux/git-po" target="_blank" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold border border-gray-700 transition">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          Repositório Fork
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+
+    <!-- Loading State -->
+    <div id="loading-state" class="text-center py-24">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent mb-4"></div>
+      <h2 class="text-xl font-bold text-gray-200">Carregando po/pt_BR.po do repositório...</h2>
+      <p class="text-sm text-gray-400 mt-1">Obtendo 6.391+ mensagens traduzidas diretamente do GitHub</p>
+    </div>
+
+    <!-- App Content (Hidden while loading) -->
+    <div id="app-content" class="hidden space-y-6">
+
+      <!-- Statistics Banner -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl shadow-sm">
+          <span class="text-xs text-gray-400 font-medium uppercase tracking-wider block mb-1">Total de Mensagens</span>
+          <span id="stats-total" class="text-2xl font-bold text-indigo-400 font-mono">-</span>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl shadow-sm">
+          <span class="text-xs text-emerald-400/80 font-medium uppercase tracking-wider block mb-1">Traduzidas</span>
+          <span id="stats-translated" class="text-2xl font-bold text-emerald-400 font-mono">-</span>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl shadow-sm">
+          <span class="text-xs text-amber-400/80 font-medium uppercase tracking-wider block mb-1">Pendentes / Revisão</span>
+          <span id="stats-pending" class="text-2xl font-bold text-amber-400 font-mono">-</span>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl shadow-sm flex flex-col justify-between">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Cobertura</span>
+            <span id="stats-percent" class="text-xs font-bold text-indigo-400 font-mono">-</span>
+          </div>
+          <div class="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden border border-gray-700">
+            <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-emerald-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls & Filter Bar -->
+      <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl shadow-sm flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
+        <!-- Search Input -->
+        <div class="relative flex-1">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+          <input type="text" id="search-input" placeholder="Buscar no msgid (EN), msgstr (PT-BR) ou arquivo..." class="w-full pl-10 pr-4 py-2 bg-gray-950 border border-gray-700 rounded-lg text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition">
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+          <button data-filter="all" class="filter-tab active px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition">Todas</button>
+          <button data-filter="untranslated" class="filter-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 text-gray-300 hover:bg-gray-700 transition">⚠️ Não Traduzidas</button>
+          <button data-filter="fuzzy" class="filter-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 text-gray-300 hover:bg-gray-700 transition">🔄 Fuzzy</button>
+          <button data-filter="translated" class="filter-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 text-gray-300 hover:bg-gray-700 transition">✅ Traduzidas</button>
+        </div>
+      </div>
+
+      <!-- Live String List -->
+      <div id="strings-list" class="space-y-4"></div>
+
+      <!-- Pagination Footer -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-800">
+        <span id="pagination-info" class="text-xs text-gray-400 font-mono">Mostrando 0 de 0 mensagens</span>
+        <div id="pagination" class="flex items-center gap-2"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Edit & Translation Submission Modal -->
+  <div id="edit-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-gray-800 flex items-center justify-between bg-gray-900/90">
+        <div>
+          <h3 class="text-base font-bold text-gray-100 flex items-center gap-2">
+            ✏️ Propor / Editar Tradução
+          </h3>
+          <span id="modal-context" class="text-xs font-mono text-gray-400 block mt-0.5">-</span>
+        </div>
+        <button id="btn-close-modal" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto space-y-6 flex-1">
+        
+        <!-- Original string (Read only) -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-indigo-400 mb-1.5">Original em Inglês (msgid):</label>
+          <pre id="modal-msgid" class="p-4 rounded-xl bg-gray-950 border border-gray-800 text-sm font-mono text-gray-200 whitespace-pre-wrap select-all break-words"></pre>
+        </div>
+
+        <!-- Single Form -->
+        <div id="single-container">
+          <label for="modal-msgstr-single" class="block text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1.5">Sua Proposta de Tradução (msgstr):</label>
+          <textarea id="modal-msgstr-single" rows="4" class="w-full p-4 rounded-xl bg-gray-950 border border-gray-700 text-sm font-mono text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" placeholder="Digite a tradução em português..."></textarea>
+        </div>
+
+        <!-- Plural Forms (If applicable) -->
+        <div id="plural-container" class="hidden space-y-4">
+          <div>
+            <label for="modal-msgstr-plural0" class="block text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1.5">Forma Singular (msgstr[0]):</label>
+            <textarea id="modal-msgstr-plural0" rows="2" class="w-full p-3 rounded-xl bg-gray-950 border border-gray-700 text-sm font-mono text-gray-100 focus:outline-none focus:border-indigo-500 transition"></textarea>
+          </div>
+          <div>
+            <label for="modal-msgstr-plural1" class="block text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1.5">Forma Plural (msgstr[1]):</label>
+            <textarea id="modal-msgstr-plural1" rows="2" class="w-full p-3 rounded-xl bg-gray-950 border border-gray-700 text-sm font-mono text-gray-100 focus:outline-none focus:border-indigo-500 transition"></textarea>
+          </div>
+        </div>
+
+        <!-- Live Validation Panel (git-po-helper test suite) -->
+        <div class="bg-gray-950/80 rounded-xl p-4 border border-gray-800">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-2.5 flex items-center gap-1.5">
+            🧪 Validação de Conformidade em Tempo Real (git-po-helper & Gettext)
+          </h4>
+          <div id="validation-box"></div>
+        </div>
+
+        <!-- Author Identification -->
+        <div class="bg-gray-950/60 rounded-xl p-4 border border-gray-800 space-y-3">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center gap-1.5">
+            👤 Identificação do Autor (Para assinar o commit & cabeçalho Last-Translator)
+          </h4>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Seu Nome Completo:</label>
+              <input type="text" id="author-name" placeholder="Ex: Daniel Pereira" class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-gray-100 focus:outline-none focus:border-indigo-500">
+            </div>
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Seu E-mail (GitHub):</label>
+              <input type="email" id="author-email" placeholder="Ex: daniel@exemplo.com" class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-gray-100 focus:outline-none focus:border-indigo-500">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">GitHub Personal Access Token (para abertura de PR):</label>
+            <input type="password" id="github-token" placeholder="ghp_..." class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-gray-100 font-mono focus:outline-none focus:border-indigo-500">
+            <span class="text-[11px] text-gray-500 mt-1 block">O token é salvo apenas no armazenamento local do seu navegador (localStorage) para comunicação direta com a API do GitHub.</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 border-t border-gray-800 bg-gray-900/90 flex items-center justify-between">
+        <button id="btn-cancel-modal" class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium transition">Cancelar</button>
+        <button id="btn-submit-pr" class="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-lg shadow-indigo-600/30 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+          Enviar Tradução & Abrir Pull Request
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="hidden">
+    <span id="toast-msg"></span>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-gray-900 py-6 text-center text-xs text-gray-500 bg-gray-950">
+    <p>Git PO Translation Portal pt_BR • Plataforma Colaborativa de Tradução Oficial do Git em Português do Brasil.</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/po-parser.js"></script>
+  <script src="js/validator.js"></script>
+  <script src="js/github-api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
